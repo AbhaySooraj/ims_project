@@ -1,108 +1,121 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, flash
 import csv
 import os
 
 app = Flask(__name__)
-app.secret_key = "your_secret_key"
+app.secret_key = "your_secret_key"  # Needed for flash messages
 
-CSV_FILE = 'inventory.csv'
+CSV_FILE = "inventory.csv"
 
+# Ensure the CSV file exists
 def initialize_csv():
-    """Creates a CSV file if it doesn't exist."""
     if not os.path.exists(CSV_FILE):
-        with open(CSV_FILE, 'w', newline='') as file:
+        with open(CSV_FILE, "w", newline="") as file:
             writer = csv.writer(file)
-            writer.writerow(['Product ID', 'Product Name', 'Category', 'Price', 'Stock', 'Total Sales'])
+            writer.writerow(["Product ID", "Product Name", "Category", "Price", "Stock", "Total Sales"])
 
+initialize_csv()
+
+# Load inventory data
 def load_inventory():
-    with open(CSV_FILE, 'r') as file:
+    with open(CSV_FILE, "r") as file:
         return list(csv.DictReader(file))
 
+# Save inventory data
 def save_inventory(inventory):
-    with open(CSV_FILE, 'w', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=['Product ID', 'Product Name', 'Category', 'Price', 'Stock', 'Total Sales'])
+    with open(CSV_FILE, "w", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=["Product ID", "Product Name", "Category", "Price", "Stock", "Total Sales"])
         writer.writeheader()
         writer.writerows(inventory)
 
-@app.route('/')
-def home():
+# Home Page - Displays Inventory
+@app.route("/")
+def index():
     inventory = load_inventory()
-    return render_template('index.html', inventory=inventory)
+    return render_template("index.html", inventory=inventory)
 
-@app.route('/add', methods=['POST'])
+# Add Product
+@app.route("/add", methods=["POST"])
 def add_product():
-    product_id = request.form['product_id']
-    product_name = request.form['product_name']
-    category = request.form['category']
-    price = request.form['price']
-    stock = request.form['stock']
-
     inventory = load_inventory()
-    if any(item['Product ID'] == product_id for item in inventory):
-        flash("Error: Product ID already exists.", "danger")
-        return redirect(url_for('home'))
-
-    inventory.append({
-        'Product ID': product_id,
-        'Product Name': product_name,
-        'Category': category,
-        'Price': price,
-        'Stock': stock,
-        'Total Sales': 0
-    })
-
+    product_id = request.form["product_id"]
+    
+    # Check if product exists
+    if any(item["Product ID"] == product_id for item in inventory):
+        flash("Error: Product ID already exists!", "danger")
+        return redirect("/")
+    
+    new_product = {
+        "Product ID": product_id,
+        "Product Name": request.form["product_name"],
+        "Category": request.form["category"],
+        "Price": request.form["price"],
+        "Stock": request.form["stock"],
+        "Total Sales": "0"
+    }
+    
+    inventory.append(new_product)
     save_inventory(inventory)
     flash("Product added successfully!", "success")
-    return redirect(url_for('home'))
+    return redirect("/")
 
-@app.route('/update', methods=['POST'])
+# Update Stock or Price
+@app.route("/update", methods=["POST"])
 def update_product():
-    product_id = request.form['product_id']
-    field = request.form['field']
-    new_value = request.form['new_value']
-
     inventory = load_inventory()
-    product = next((item for item in inventory if item['Product ID'] == product_id), None)
+    product_id = request.form["product_id"]
+    
+    for item in inventory:
+        if item["Product ID"] == product_id:
+            field = request.form["field"]
+            new_value = request.form["new_value"]
+            
+            if field == "Price":
+                item[field] = float(new_value)
+            elif field == "Stock":
+                item[field] = int(new_value)
+            else:
+                flash("Invalid field selection!", "danger")
+                return redirect("/")
+            
+            save_inventory(inventory)
+            flash("Product updated successfully!", "success")
+            return redirect("/")
+    
+    flash("Error: Product ID not found!", "danger")
+    return redirect("/")
 
-    if not product:
-        flash("Error: Product ID not found.", "danger")
-        return redirect(url_for('home'))
-
-    product[field] = float(new_value) if field == 'Price' else int(new_value)
-    save_inventory(inventory)
-    flash("Product updated successfully!", "success")
-    return redirect(url_for('home'))
-
-@app.route('/sale', methods=['POST'])
+# Record a Sale
+@app.route("/sell", methods=["POST"])
 def record_sale():
-    product_id = request.form['product_id']
-    quantity = int(request.form['quantity'])
-
     inventory = load_inventory()
-    product = next((item for item in inventory if item['Product ID'] == product_id), None)
+    product_id = request.form["product_id"]
+    quantity = int(request.form["quantity"])
+    
+    for item in inventory:
+        if item["Product ID"] == product_id:
+            stock = int(item["Stock"])
+            if stock >= quantity:
+                item["Stock"] = stock - quantity
+                item["Total Sales"] = int(item["Total Sales"]) + quantity
+                save_inventory(inventory)
+                flash("Sale recorded successfully!", "success")
+                return redirect("/")
+            else:
+                flash("Error: Insufficient stock!", "danger")
+                return redirect("/")
+    
+    flash("Error: Product ID not found!", "danger")
+    return redirect("/")
 
-    if not product:
-        flash("Error: Product ID not found.", "danger")
-        return redirect(url_for('home'))
-
-    stock = int(product['Stock'])
-    if stock >= quantity:
-        product['Stock'] = stock - quantity
-        product['Total Sales'] = int(product['Total Sales']) + quantity
-        save_inventory(inventory)
-        flash("Sale recorded successfully!", "success")
-    else:
-        flash("Error: Insufficient stock.", "danger")
-
-    return redirect(url_for('home'))
-
-@app.route('/recommend', methods=['POST'])
+# Recommend Restock
+@app.route("/recommend")
 def recommend_restock():
-    threshold = int(request.form['threshold'])
+    threshold = 5  # You can change this threshold
     inventory = load_inventory()
-    recommendations = [item for item in inventory if int(item['Stock']) < threshold]
-    return render_template('recommend.html', recommendations=recommendations)
+    recommendations = [item for item in inventory if int(item["Stock"]) < threshold]
+    return render_template("recommend.html", recommendations=recommendations)
 
+# Run Flask App
 if __name__ == "__main__":
-    initialize_csv()
     app.run(debug=True)

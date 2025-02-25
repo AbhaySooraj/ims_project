@@ -1,0 +1,10 @@
+services:
+  - name: ims-dss
+    type: web
+    runtime: docker
+    repo: https://github.com/yourusername/ims_project
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    plan: free
+    region: oregon

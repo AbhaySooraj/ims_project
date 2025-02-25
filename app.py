@@ -95,7 +95,7 @@ def recommend_restock():
         initial_stock = int(item["Initial Stock"])
         total_sales = int(item["Total Sales"])
         
-        if total_sales > (0.5 * initial_stock):  # Check if sales exceed 50% of initial stock
+        if total_sales >= (0.5 * initial_stock):  # Check if sales exceed 50% of initial stock
             recommendations.append(item)
 
     return render_template("recommend.html", recommendations=recommendations)

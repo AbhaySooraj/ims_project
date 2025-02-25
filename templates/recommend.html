@@ -3,43 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restock Recommendations</title>
+    <title>Restocking Recommendations</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h1>Restock Recommendations</h1>
-    
-    <form action="{{ url_for('recommend') }}" method="post">
-        <label for="threshold">Enter Stock Threshold:</label>
-        <input type="number" id="threshold" name="threshold" required>
-        <button type="submit">Get Recommendations</button>
-    </form>
+    <h1>Restocking Recommendations</h1>
 
     {% if recommendations %}
-        <h2>Products that need restocking:</h2>
         <table border="1">
             <tr>
                 <th>Product ID</th>
-                <th>Product Name</th>
+                <th>Name</th>
                 <th>Category</th>
                 <th>Price</th>
                 <th>Stock</th>
             </tr>
-            {% for product in recommendations %}
+            {% for item in recommendations %}
             <tr>
-                <td>{{ product['Product ID'] }}</td>
-                <td>{{ product['Product Name'] }}</td>
-                <td>{{ product['Category'] }}</td>
-                <td>${{ product['Price'] }}</td>
-                <td style="color: red;">{{ product['Stock'] }}</td>
+                <td>{{ item["Product ID"] }}</td>
+                <td>{{ item["Product Name"] }}</td>
+                <td>{{ item["Category"] }}</td>
+                <td>${{ item["Price"] }}</td>
+                <td style="color: red;">{{ item["Stock"] }}</td>
             </tr>
             {% endfor %}
         </table>
     {% else %}
-        <p>No products need restocking.</p>
+        <p>No products need restocking at the moment!</p>
     {% endif %}
 
     <br>
-    <a href="{{ url_for('index') }}">Back to Home</a>
+    <a href="/">Back to Inventory</a>
 </body>
 </html>

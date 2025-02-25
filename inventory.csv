@@ -1,0 +1,11 @@
+Product ID,Product Name,Category,Price,Stock,Total Sales,Initial Stock
+P001,Laptop,Electronics,800,20,15,50
+P002,Smartphone,Electronics,500,10,20,40
+P003,Headphones,Accessories,50,30,5,50
+P004,Tablet,Electronics,300,15,20,40
+P005,Backpack,Bags,60,25,10,50
+P006,Keyboard,Accessories,40,35,5,50
+P007,Mouse,Accessories,25,40,10,50
+P008,Smartwatch,Electronics,200,5,25,50
+P009,Desk Chair,Furniture,120,20,5,50
+P010,Monitor,Electronics,250,10,20,40
